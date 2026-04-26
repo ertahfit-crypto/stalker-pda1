@@ -1,0 +1,49 @@
+{
+  "nodes": [
+    {
+      "id": "CORDON_001",
+      "name": "Cordon Entrance",
+      "url": "https://images.unsplash.com/photo-1579532586975-d8a2b4b4b3b3?w=800&h=600&fit=crop",
+      "status": "ONLINE",
+      "lat": "47.8268",
+      "lon": "35.1075",
+      "signal_strength": 87
+    },
+    {
+      "id": "ROAD_A12",
+      "name": "Road A-12",
+      "url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?w=800&h=600&fit=crop",
+      "status": "ONLINE",
+      "lat": "47.8234",
+      "lon": "35.1123",
+      "signal_strength": 92
+    },
+    {
+      "id": "WAREHOUSE_04",
+      "name": "Warehouse 4",
+      "url": "https://images.unsplash.com/photo-1563895249163-b6b08e2191e3?w=800&h=600&fit=crop",
+      "status": "OFFLINE",
+      "lat": "47.8290",
+      "lon": "35.1056",
+      "signal_strength": 45
+    },
+    {
+      "id": "ROSTOK_007",
+      "name": "Rostok Checkpoint",
+      "url": "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=600&fit=crop",
+      "status": "ONLINE",
+      "lat": "47.8212",
+      "lon": "35.1089",
+      "signal_strength": 78
+    },
+    {
+      "id": "ARCHIVE_03",
+      "name": "Archive Sector 3",
+      "url": "https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800&h=600&fit=crop",
+      "status": "ONLINE",
+      "lat": "47.8245",
+      "lon": "35.1098",
+      "signal_strength": 83
+    }
+  ]
+}
