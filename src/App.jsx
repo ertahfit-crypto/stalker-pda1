@@ -1,209 +1,65 @@
-import { useState, useEffect } from 'react'
-import './index.css';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 
+// Пример данных камер (потом подгрузишь из JSON)
+const initialCameras = [
+  { id: 'OD-048', name: 'ODESA_PORT', coords: { lat: 46.48, lon: 30.74 }, url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExM3Y1M3Y1M3Y1M3Y1M3Y1M3Y1M3Y1M3Y1M3Y1M3Y1M3YmcHRwPW1mcmVjPTE/3o7TKMGpx6v4vV4V4s/giphy.gif' },
+  { id: 'OD-001', name: 'DERIBAS_ST', coords: { lat: 46.48, lon: 30.73 }, url: 'https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHNwdjV6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z3R6Z/3o7TKSj06W/giphy.gif' }
+];
+
 function App() {
-  const [activeNode, setActiveNode] = useState(null)
-  const [nodes, setNodes] = useState([])
-  const [isConnecting, setIsConnecting] = useState(false)
-  const [currentTime, setCurrentTime] = useState(new Date())
-  const [uptime, setUptime] = useState(0)
-  const [userPosition, setUserPosition] = useState({ lat: null, lon: null })
+  const [activeNode, setActiveNode] = useState(null);
+  const [userPos, setUserPos] = useState({ lat: 0, lon: 0 });
 
   useEffect(() => {
-    fetch('/data/cameras.json')
-      .then(res => res.json())
-      .then(data => setNodes(data))
-      .catch(err => console.error('Failed to load nodes:', err))
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date())
-      setUptime(prev => prev + 1)
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  // Геолокация пользователя
-  useEffect(() => {
-    if ('geolocation' in navigator) {
-      const watchId = navigator.geolocation.watchPosition(
-        (position) => {
-          setUserPosition({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude
-          })
-        },
-        (error) => {
-          console.error('Ошибка геолокации:', error)
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        }
-      )
-      return () => navigator.geolocation.clearWatch(watchId)
-    } else {
-      console.error('Геолокация не поддерживается')
-    }
-  }, [])
-
-  // Авто-фокус на ближайших камерах
-  useEffect(() => {
-    if (!userPosition.lat || !userPosition.lon) return
-    
-    // Находим ближайшую камеру в радиусе 50 метров
-    const nearestNode = nodes.find(node => shouldAutoFocus(node))
-    
-    if (nearestNode && activeNode?.id !== nearestNode.id) {
-      console.log('Авто-фокус на камере:', nearestNode.id)
-      setActiveNode(nearestNode)
-    }
-  }, [userPosition, nodes, activeNode])
-
-  // Функция расчета расстояния по формуле Гаверсинуса
-  function getDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // радиус Земли в метрах
-    const φ1 = lat1 * Math.PI/180;
-    const φ2 = lat2 * Math.PI/180;
-    const Δφ = (lat2-lat1) * Math.PI/180;
-    const Δλ = (lon2-lon1) * Math.PI/180;
-
-    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-            Math.cos(φ1) * Math.cos(φ2) *
-            Math.sin(Δλ/2) * Math.sin(Δλ/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-    return R * c; // расстояние в метрах
-  }
-
-  // Получение расстояния до узла
-  const getNodeDistance = (node) => {
-    if (!userPosition.lat || !userPosition.lon) return Infinity
-    
-    const [nodeLat, nodeLon] = node.coords.split(',').map(coord => parseFloat(coord.trim()))
-    return getDistance(userPosition.lat, userPosition.lon, nodeLat, nodeLon)
-  }
-
-  // Проверка доступности камеры на основе расстояния
-  const isNodeInRange = (node) => {
-    const distance = getNodeDistance(node)
-    return distance <= 10000 // Тестовый радиус 10 км
-  }
-
-  // Проверка для авто-фокуса (менее 50 метров)
-  const shouldAutoFocus = (node) => {
-    const distance = getNodeDistance(node)
-    return distance <= 50 // Радиус 50 метров для авто-фокуса
-  }
-
-  const handleNodeSelect = (node) => {
-    // Сразу активируем камеру при клике
-    setActiveNode(node)
-  }
-
-  // Получение статуса сигнала
-  const getSignalStatus = (node) => {
-    const distance = getNodeDistance(node)
-    return distance <= 500 ? 'SIGNAL STABLE' : 'WEAK SIGNAL'
-  }
-
-  const formatUptime = (seconds) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  const formatTime = (date) => {
-  try {
-    return date.toLocaleTimeString('uk-UA', {
-      timeZone: 'Europe/Kyiv',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
+    navigator.geolocation.watchPosition((pos) => {
+      setUserPos({ lat: pos.coords.latitude.toFixed(4), lon: pos.coords.longitude.toFixed(4) });
     });
-  } catch (e) {
-    console.error("Ошибка таймзоны, использую локальное время");
-    return date.toLocaleTimeString(); // Резервный вариант
-  }
-};
+  }, []);
 
   return (
-    <div className="flex flex-col h-screen w-screen bg-black text-[#00ff9c] overflow-hidden font-mono crt-effect animate-flicker">
-      
-      {/* ЭКРАН МОНИТОРА (60% высоты) */}
-      <main className="h-[60%] relative border-b border-[#00ff9c] flex flex-col items-center justify-center p-2">
-        {activeNode ? (
-          <>
-            <img 
-              src={activeNode.url} 
-              alt={activeNode.name}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                e.target.style.display = 'none'
-              }}
-            />
-            <div className="absolute top-2 left-2 text-[10px] space-y-1">
-              <div>NODE_ID: {activeNode.id}</div>
-              <div>STATUS: {getSignalStatus(activeNode)}</div>
-              <div>BTRATE: {Math.floor(Math.random() * 500 + 100)}KBPS</div>
+    <div className="pda-container animate-flicker">
+      {/* ЛЕВАЯ ПАНЕЛЬ / НИЖНЯЯ ПАНЕЛЬ */}
+      <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#00ff9c] p-4 bg-black z-20 overflow-y-auto h-2/5 md:h-full">
+        <div className="mb-4 text-xs">
+          <p className="glow-text">[ACTIVE_NODES]</p>
+          <p>USER_POS: {userPos.lat}, {userPos.lon}</p>
+        </div>
+
+        <div className="space-y-2">
+          {initialCameras.map(node => (
+            <div
+              key={node.id}
+              onClick={() => setActiveNode(node)}
+              className={`p-2 border cursor-pointer transition-colors ${activeNode?.id === node.id ? 'bg-[#00ff9c] text-black' : 'border-[#00ff9c] hover:bg-[#00ff9c]/20'}`}
+            >
+              <p className="text-sm font-bold">{node.id}</p>
+              <p className="text-[10px]">{node.name}</p>
             </div>
-          </>
+          ))}
+        </div>
+      </aside>
+
+      {/* ГЛАВНЫЙ ЭКРАН МОНИТОРА */}
+      <main className="crt-effect h-3/5 md:h-full">
+        {activeNode ? (
+          <div className="relative w-full h-full">
+            <div className="absolute top-4 left-4 z-30 text-[10px] bg-black/50 p-2 border border-[#00ff9c]">
+              <p>NODE_ID: {activeNode.id}</p>
+              <p>COORDS: {activeNode.coords.lat}, {activeNode.coords.lon}</p>
+              <p className="text-[#00ff9c] animate-pulse">CONNECTING...</p>
+            </div>
+            <img src={activeNode.url} className="scanline" alt="Camera stream" />
+          </div>
         ) : (
-          <div className="text-center">
-            <div className="text-2xl mb-4">NO SIGNAL</div>
-            <div className="text-sm">SELECT NODE TO BEGIN SURVEILLANCE</div>
+          <div className="flex flex-col items-center justify-center h-full space-y-4">
+            <div className="text-2xl md:text-4xl glow-text">NO SIGNAL</div>
+            <p className="text-xs animate-pulse">SELECT NODE TO BEGIN SURVEILLANCE</p>
           </div>
         )}
       </main>
-
-      {/* СПИСОК УЗЛОВ (40% высоты, скролл) */}
-      <aside className="h-[40%] p-4 bg-black/90 overflow-y-auto">
-        <h2 className="border-b border-[#00ff9c] mb-2 text-sm">ПОБЛИЗОСТИ:</h2>
-        <div className="text-[10px] space-y-1 mb-3">
-          <div>UPTIME: {formatUptime(uptime)}</div>
-          <div>TIME: {formatTime(currentTime)}</div>
-          <div>CONNECTION: ENCRYPTED</div>
-        </div>
-          
-        <div className="space-y-3">
-          {nodes
-            .map(node => ({ ...node, distance: getNodeDistance(node) }))
-            .sort((a, b) => a.distance - b.distance)
-            .map(node => {
-              const distance = node.distance
-              
-              return (
-                <div
-                  key={node.id}
-                  onClick={() => handleNodeSelect(node)}
-                  className={`p-4 border cursor-pointer ${
-                    activeNode?.id === node.id 
-                      ? 'border-green-500 bg-green-500 bg-opacity-10' 
-                      : 'border-green-900 hover:border-green-500'
-                  }`}
-                >
-                  <div className="text-sm">{node.id}</div>
-                  <div className="text-[10px] mt-1">{node.name}</div>
-                  <div className="text-sm mt-2 font-bold">
-                    {distance === Infinity ? 'UNKNOWN' : `${Math.round(distance)}m`}
-                  </div>
-                  <div className={`text-[10px] mt-1 ${
-                    distance <= 500 ? 'text-green-500' : 'text-yellow-500'
-                  }`}>
-                    {getSignalStatus(node)}
-                  </div>
-                </div>
-              )
-            })}
-        </div>
-      </aside>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

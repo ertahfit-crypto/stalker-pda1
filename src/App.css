@@ -1,24 +1,55 @@
 @reference "./index.css";
 
+/* Основной контейнер ПДА */
+.pda-container {
+  display: flex;
+  flex-direction: column; /* На телефоне - в колонку */
+  height: 100vh;
+  width: 100vw;
+  background: #000;
+  color: #00ff9c;
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden;
+}
+
+/* Для мониторов и планшетов - меняем на строку */
+@media (min-width: 768px) {
+  .pda-container {
+    flex-direction: row;
+  }
+}
+
+/* Эффект ЭЛТ (твои сканлайны) */
 .crt-effect {
   position: relative;
-  width: 100vw;
-  height: 100vh;
-  background: #000;
+  flex: 1; /* Занимает всё свободное место */
+  display: flex;
+  flex-direction: column;
 }
+
 .crt-effect::after {
   content: " ";
   display: block;
   position: absolute;
   top: 0; left: 0; bottom: 0; right: 0;
-  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+  background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%),
               linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-  z-index: 100;
+  z-index: 10;
   background-size: 100% 3px, 3px 100%;
   pointer-events: none;
 }
+
+.glow-text {
+  text-shadow: 0 0 5px #00ff9c, 0 0 10px rgba(0, 255, 156, 0.5);
+}
+
+.scanline {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 @keyframes flicker {
   0% { opacity: 0.98; } 5% { opacity: 0.95; } 10% { opacity: 0.99; } 100% { opacity: 0.97; }
 }
 .animate-flicker { animation: flicker 0.15s infinite; }
-.glow-text { text-shadow: 0 0 5px #00ff9c, 0 0 10px rgba(0, 255, 156, 0.5); }
