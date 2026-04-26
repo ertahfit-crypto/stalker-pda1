@@ -4,31 +4,22 @@ import './App.css';
 // СПИСОК РЕАЛЬНЫХ ОТКРЫТЫХ КАМЕР (Без паролей)
 const initialCameras = [
   {
-    id: 'SHOP-ZONE',
-    name: 'LOCAL_MARKET_01',
-    coords: { lat: 46.3910, lon: 30.7181 },
-    // Прямая ссылка на статический шум (всегда работает)
-    url: 'https://media.giphy.com/media/oEI9uWUicKgZSMmH2f/giphy.gif',
-    type: 'image'
+    id: 'ORBIT-01',
+    name: 'ISS_LIVE_FEED',
+    coords: { lat: 0, lon: 0 },
+    // Правильная ссылка для встраивания стрима с МКС
+    url: 'https://www.youtube-nocookie.com/embed/jPTD2gnZFUw?autoplay=1&mute=1',
+    type: 'video'
   },
   {
     id: 'CITY-LIVE',
-    name: 'STREET_MONITOR',
+    name: 'ODESA_DUMSKAYA',
     coords: { lat: 46.48, lon: 30.74 },
-    // Пример открытого MJPEG потока (часто используется в IP камерах)
-    url: 'https://images.webcams.travel/preview/1569429158.jpg',
-    type: 'image'
-  },
-  {
-    id: 'ORBIT-01',
-    name: 'ISS_FEED_LIVE',
-    coords: { lat: 0, lon: 0 },
-    // Реальный стрим с МКС через iframe
-    url: 'https://youtu.be/NKvlt-K0jn0',
+    // Пример другой камеры (если найдешь рабочую ссылку для встраивания)
+    url: 'https://www.youtube-nocookie.com/embed/live_stream?channel=UC...&autoplay=1',
     type: 'video'
   }
 ];
-
 function App() {
   const [activeNode, setActiveNode] = useState(null);
   const [userPos, setUserPos] = useState({ lat: 0, lon: 0 });
