@@ -50,26 +50,53 @@ function App() {
     }
   }, [])
 
-  // Функция расчета расстояния между двумя точками (формула Хаверсина)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371000 // Радиус Земли в метрах
-    const dLat = (lat2 - lat1) * Math.PI / 180
-    const dLon = (lon2 - lon1) * Math.PI / 180
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
-      Math.sin(dLon/2) * Math.sin(dLon/2)
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
-    return R * c
+  // Авто-фокус на ближайших камерах
+  useEffect(() => {
+    if (!userPosition.lat || !userPosition.lon) return
+    
+    // Находим ближайшую камеру в радиусе 50 метров
+    const nearestNode = nodes.find(node => shouldAutoFocus(node))
+    
+    if (nearestNode && selectedNode?.id !== nearestNode.id) {
+      console.log('Авто-фокус на камере:', nearestNode.id)
+      setSelectedNode(nearestNode)
+    }
+  }, [userPosition, nodes, selectedNode])
+
+  // Функция расчета расстояния по формуле Гаверсинуса
+  function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371e3; // радиус Земли в метрах
+    const φ1 = lat1 * Math.PI/180;
+    const φ2 = lat2 * Math.PI/180;
+    const Δφ = (lat2-lat1) * Math.PI/180;
+    const Δλ = (lon2-lon1) * Math.PI/180;
+
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+
+    return R * c; // расстояние в метрах
+  }
+
+  // Получение расстояния до узла
+  const getNodeDistance = (node) => {
+    if (!userPosition.lat || !userPosition.lon) return Infinity
+    
+    const [nodeLat, nodeLon] = node.coords.split(',').map(coord => parseFloat(coord.trim()))
+    return getDistance(userPosition.lat, userPosition.lon, nodeLat, nodeLon)
   }
 
   // Проверка доступности камеры на основе расстояния
   const isNodeInRange = (node) => {
-    if (!userPosition.lat || !userPosition.lon) return true // Если нет геолокации, все доступны
-    
-    const [nodeLat, nodeLon] = node.coords.split(',').map(coord => parseFloat(coord.trim()))
-    const distance = calculateDistance(userPosition.lat, userPosition.lon, nodeLat, nodeLon)
-    return distance <= 300 // Радиус 300 метров
+    const distance = getNodeDistance(node)
+    return distance <= 500 // Радиус 500 метров
+  }
+
+  // Проверка для авто-фокуса (менее 50 метров)
+  const shouldAutoFocus = (node) => {
+    const distance = getNodeDistance(node)
+    return distance <= 50 // Радиус 50 метров для авто-фокуса
   }
 
   const handleNodeSelect = (node) => {
@@ -118,33 +145,41 @@ function App() {
           </div>
           
           <div className="space-y-2">
-            {nodes.map(node => {
-              const inRange = isNodeInRange(node)
-              return (
-                <div
-                  key={node.id}
-                  onClick={() => handleNodeSelect(node)}
-                  className={`p-3 border ${
-                    inRange ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                  } ${
-                    selectedNode?.id === node.id 
-                      ? 'border-green-500 bg-green-500 bg-opacity-10' 
-                      : inRange 
-                        ? 'border-green-900 hover:border-green-500'
-                        : 'border-red-900'
-                  }`}
-                >
-                  <div className="text-sm">{node.id}</div>
-                  <div className="text-xs mt-1">{node.name}</div>
-                  <div className="text-xs mt-2">COORDS: {node.coords}</div>
-                  <div className={`text-xs mt-2 ${
-                    inRange ? 'text-green-500' : 'text-red-500'
-                  }`}>
-                    {inRange ? 'IN RANGE' : 'SIGNAL LOST'}
+            {nodes
+              .map(node => ({ ...node, distance: getNodeDistance(node) }))
+              .sort((a, b) => a.distance - b.distance)
+              .map(node => {
+                const inRange = isNodeInRange(node)
+                const distance = node.distance
+                
+                return (
+                  <div
+                    key={node.id}
+                    onClick={() => handleNodeSelect(node)}
+                    className={`p-3 border ${
+                      inRange ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                    } ${
+                      selectedNode?.id === node.id 
+                        ? 'border-green-500 bg-green-500 bg-opacity-10' 
+                        : inRange 
+                          ? 'border-green-900 hover:border-green-500'
+                          : 'border-red-900'
+                    }`}
+                  >
+                    <div className="text-sm">{node.id}</div>
+                    <div className="text-xs mt-1">{node.name}</div>
+                    <div className="text-xs mt-2">COORDS: {node.coords}</div>
+                    <div className="text-xs mt-2">
+                      DISTANCE: {distance === Infinity ? 'UNKNOWN' : `${Math.round(distance)}m`}
+                    </div>
+                    <div className={`text-xs mt-2 ${
+                      inRange ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {inRange ? 'IN RANGE' : 'OUT OF RANGE'}
+                    </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
           </div>
         </div>
 
