@@ -90,7 +90,7 @@ function App() {
   // Проверка доступности камеры на основе расстояния
   const isNodeInRange = (node) => {
     const distance = getNodeDistance(node)
-    return distance <= 500 // Радиус 500 метров
+    return distance <= 10000 // Тестовый радиус 10 км
   }
 
   // Проверка для авто-фокуса (менее 50 метров)
@@ -100,8 +100,7 @@ function App() {
   }
 
   const handleNodeSelect = (node) => {
-    if (!isNodeInRange(node)) return // Блокируем выбор дальних камер
-    
+    // FORCE CONNECT - подключение в любом случае для тестов
     setIsConnecting(true)
     setTimeout(() => {
       setSelectedNode(node)
