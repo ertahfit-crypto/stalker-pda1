@@ -3,7 +3,7 @@ import './index.css';
 import './App.css';
 
 function App() {
-  const [selectedNode, setSelectedNode] = useState(null)
+  const [activeNode, setActiveNode] = useState(null)
   const [nodes, setNodes] = useState([])
   const [isConnecting, setIsConnecting] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
@@ -57,11 +57,11 @@ function App() {
     // Находим ближайшую камеру в радиусе 50 метров
     const nearestNode = nodes.find(node => shouldAutoFocus(node))
     
-    if (nearestNode && selectedNode?.id !== nearestNode.id) {
+    if (nearestNode && activeNode?.id !== nearestNode.id) {
       console.log('Авто-фокус на камере:', nearestNode.id)
-      setSelectedNode(nearestNode)
+      setActiveNode(nearestNode)
     }
-  }, [userPosition, nodes, selectedNode])
+  }, [userPosition, nodes, activeNode])
 
   // Функция расчета расстояния по формуле Гаверсинуса
   function getDistance(lat1, lon1, lat2, lon2) {
@@ -100,12 +100,14 @@ function App() {
   }
 
   const handleNodeSelect = (node) => {
-    // FORCE CONNECT - подключение в любом случае для тестов
-    setIsConnecting(true)
-    setTimeout(() => {
-      setSelectedNode(node)
-      setIsConnecting(false)
-    }, 1500)
+    // Сразу активируем камеру при клике
+    setActiveNode(node)
+  }
+
+  // Получение статуса сигнала
+  const getSignalStatus = (node) => {
+    const distance = getNodeDistance(node)
+    return distance <= 500 ? 'SIGNAL STABLE' : 'WEAK SIGNAL'
   }
 
   const formatUptime = (seconds) => {
@@ -131,42 +133,36 @@ function App() {
 };
 
   return (
-    <div className="flex flex-col md:flex-row h-screen w-screen bg-black text-[#00ff9c] overflow-hidden font-mono crt-effect animate-flicker">
+    <div className="flex flex-col h-screen w-screen bg-black text-[#00ff9c] overflow-hidden font-mono crt-effect animate-flicker">
       
-      {/* ЭКРАН МОНИТОРА (Сверху на мобилках) */}
-      <main className="flex-1 relative border-b md:border-b-0 md:border-r border-[#00ff9c] flex flex-col items-center justify-center p-2">
-        {isConnecting && (
-          <div className="absolute inset-0 bg-black bg-opacity-90 flex items-center justify-center z-20">
-            <div className="text-xl md:text-2xl animate-pulse">CONNECTING...</div>
-          </div>
-        )}
-        
-        {selectedNode ? (
+      {/* ЭКРАН МОНИТОРА (60% высоты) */}
+      <main className="h-[60%] relative border-b border-[#00ff9c] flex flex-col items-center justify-center p-2">
+        {activeNode ? (
           <>
             <img 
-              src={selectedNode.url} 
-              alt={selectedNode.name}
+              src={activeNode.url} 
+              alt={activeNode.name}
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.target.style.display = 'none'
               }}
             />
-            <div className="absolute top-2 md:top-4 left-2 md:left-4 text-[10px] md:text-xs space-y-1">
-              <div>NODE_ID: {selectedNode.id}</div>
-              <div className="hidden md:block">COORDS: {selectedNode.coords}</div>
-              <div>BITRATE: {Math.floor(Math.random() * 500 + 100)}KBPS</div>
+            <div className="absolute top-2 left-2 text-[10px] space-y-1">
+              <div>NODE_ID: {activeNode.id}</div>
+              <div>STATUS: {getSignalStatus(activeNode)}</div>
+              <div>BTRATE: {Math.floor(Math.random() * 500 + 100)}KBPS</div>
             </div>
           </>
         ) : (
           <div className="text-center">
-            <div className="text-xl md:text-3xl mb-4">NO SIGNAL</div>
-            <div className="text-[10px] md:text-sm">SELECT NODE TO BEGIN SURVEILLANCE</div>
+            <div className="text-2xl mb-4">NO SIGNAL</div>
+            <div className="text-sm">SELECT NODE TO BEGIN SURVEILLANCE</div>
           </div>
         )}
       </main>
 
-      {/* СПИСОК УЗЛОВ (Снизу на мобилках) */}
-      <aside className="h-[40%] md:h-full md:w-64 p-4 bg-black/90 z-10 overflow-y-auto order-last">
+      {/* СПИСОК УЗЛОВ (40% высоты, скролл) */}
+      <aside className="h-[40%] p-4 bg-black/90 overflow-y-auto">
         <h2 className="border-b border-[#00ff9c] mb-2 text-sm">ПОБЛИЗОСТИ:</h2>
         <div className="text-[10px] space-y-1 mb-3">
           <div>UPTIME: {formatUptime(uptime)}</div>
@@ -174,42 +170,37 @@ function App() {
           <div>CONNECTION: ENCRYPTED</div>
         </div>
           
-          <div className="space-y-3">
-            {nodes
-              .map(node => ({ ...node, distance: getNodeDistance(node) }))
-              .sort((a, b) => a.distance - b.distance)
-              .map(node => {
-                const inRange = isNodeInRange(node)
-                const distance = node.distance
-                
-                return (
-                  <div
-                    key={node.id}
-                    onClick={() => handleNodeSelect(node)}
-                    className={`p-4 border ${
-                      inRange ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
-                    } ${
-                      selectedNode?.id === node.id 
-                        ? 'border-green-500 bg-green-500 bg-opacity-10' 
-                        : inRange 
-                          ? 'border-green-900 hover:border-green-500'
-                          : 'border-red-900'
-                    }`}
-                  >
-                    <div className="text-sm">{node.id}</div>
-                    <div className="text-[10px] mt-1">{node.name}</div>
-                    <div className="text-sm mt-2 font-bold">
-                      {distance === Infinity ? 'UNKNOWN' : `${Math.round(distance)}m`}
-                    </div>
-                    <div className={`text-[10px] mt-1 ${
-                      inRange ? 'text-green-500' : 'text-red-500'
-                    }`}>
-                      {inRange ? 'IN RANGE' : 'OUT OF RANGE'}
-                    </div>
+        <div className="space-y-3">
+          {nodes
+            .map(node => ({ ...node, distance: getNodeDistance(node) }))
+            .sort((a, b) => a.distance - b.distance)
+            .map(node => {
+              const distance = node.distance
+              
+              return (
+                <div
+                  key={node.id}
+                  onClick={() => handleNodeSelect(node)}
+                  className={`p-4 border cursor-pointer ${
+                    activeNode?.id === node.id 
+                      ? 'border-green-500 bg-green-500 bg-opacity-10' 
+                      : 'border-green-900 hover:border-green-500'
+                  }`}
+                >
+                  <div className="text-sm">{node.id}</div>
+                  <div className="text-[10px] mt-1">{node.name}</div>
+                  <div className="text-sm mt-2 font-bold">
+                    {distance === Infinity ? 'UNKNOWN' : `${Math.round(distance)}m`}
                   </div>
-                )
-              })}
-          </div>
+                  <div className={`text-[10px] mt-1 ${
+                    distance <= 500 ? 'text-green-500' : 'text-yellow-500'
+                  }`}>
+                    {getSignalStatus(node)}
+                  </div>
+                </div>
+              )
+            })}
+        </div>
       </aside>
     </div>
   )
