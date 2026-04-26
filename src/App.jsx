@@ -18,10 +18,10 @@ const cameraDB = [
     type: 'video'
   },
   {
-    id: 'TEST-STATIC',
-    name: 'ШУМ_ЭФИРА',
+    id: 'пес',
+    name: 'стрим пес ',
     lat: 46.5000, lon: 30.8000,
-    url: 'https://media.giphy.com/media/oEI9uWUicKgZSMmH2f/giphy.gif',
+    url: 'https://www.youtube.com/embed/NKvlt-K0jn0',
     type: 'image'
   }
 ];
