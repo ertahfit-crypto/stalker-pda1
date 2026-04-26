@@ -10,10 +10,10 @@ const cameraDB = [
   },
   {
     id: 'ISS-LIVE',
-    name: 'ОРБИТА_МКС',
+    name: 'лисная хижина ',
     lat: 0, lon: 0,
     // Правильный эмбед для YouTube
-    url: 'https://www.youtube-nocookie.com/embed/jPTD2gnZFUw?autoplay=1&mute=1&enablejsapi=1',
+    url: 'https://www.youtube-nocookie.com/embed/04Pq3l95bRA?autoplay=1&mute=1',
     type: 'video'
   },
   {
